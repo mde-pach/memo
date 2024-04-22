@@ -8,18 +8,19 @@ impl MemoCommand {
     pub const GET: &'static str = "get";
     pub const RM: &'static str = "rm";
     pub const LIST: &'static str = "list";
+    pub const SET: &'static str = "set";
 }
 pub struct MemoCommandHandler<'a> {
     pub memo: &'a mut Memo,
 }
 
 impl MemoCommandHandler<'_> {
-    pub fn add(&mut self, key: &str, value: &str) {
+    pub fn add(&mut self, key: &str, value: &str, ttl: Option<i64>) {
         match self.memo.get(key) {
             Some(_) => {
                 println!("Key already exists: {}", key);
             }
-            None => match self.memo.set(key, value) {
+            None => match self.memo.add(key, value, ttl) {
                 Ok(_) => {
                     println!("Added key: {}", key);
                 }
@@ -27,6 +28,27 @@ impl MemoCommandHandler<'_> {
                     println!("Error adding key: {}", e);
                 }
             },
+        }
+    }
+
+    pub fn set(&mut self, key: &str, value: Option<&str>, ttl: Option<i64>) {
+        match self.memo.get(key) {
+            Some(_) => match self.memo.set(key, value, ttl) {
+                Ok(_) => {
+                    if value.is_some() {
+                        println!("Setting key: {}", key);
+                    }
+                    if ttl.is_some() {
+                        println!("Setting ttl for key: {}", key);
+                    }
+                }
+                Err(e) => {
+                    println!("Error setting key: {}", e);
+                }
+            },
+            None => {
+                println!("No value found for key: {}", key);
+            }
         }
     }
 
