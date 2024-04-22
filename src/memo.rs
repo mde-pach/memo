@@ -7,6 +7,7 @@ use std::path::PathBuf;
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MemoVariable {
     pub value: String,
+    pub ttl: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -20,19 +21,45 @@ impl Memo {
         self.store.get(key)
     }
 
-    pub fn set(&mut self, key: &str, value: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn add(
+        &mut self,
+        key: &str,
+        value: &str,
+        ttl: Option<i64>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let ttl = ttl.map(|t| t.to_string());
         self.store.insert(
             key.to_string(),
             MemoVariable {
                 value: value.to_string(),
+                ttl,
             },
         );
         serde_json::to_writer_pretty(&File::create(&self.file_path)?, &self.store)?;
         Ok(())
     }
+
+    pub fn set(
+        &mut self,
+        key: &str,
+        value: Option<&str>,
+        ttl: Option<i64>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let ttl = ttl.map(|t| t.to_string());
+        if let Some(v) = self.store.get_mut(key) {
+            if let Some(value) = value {
+                v.value = value.to_string();
+            }
+            if let Some(ttl) = ttl {
+                v.ttl = Some(ttl);
+            }
+        }
+        self.write_to_file()?;
+        Ok(())
+    }
     pub fn rm(&mut self, key: &str) -> Result<(), Box<dyn std::error::Error>> {
         self.store.remove(key);
-        serde_json::to_writer_pretty(&File::create(&self.file_path)?, &self.store)?;
+        self.write_to_file()?;
         Ok(())
     }
 
@@ -51,6 +78,10 @@ impl Memo {
         Ok(Memo::from_file_path(file_path)?)
     }
 
+    fn write_to_file(&self) -> Result<(), Box<dyn std::error::Error>> {
+        serde_json::to_writer_pretty(&File::create(&self.file_path)?, &self.store)?;
+        Ok(())
+    }
     fn ensure_directory_and_file(
         directory_path: PathBuf,
         filename: &str,
@@ -73,5 +104,19 @@ impl Memo {
             .ok_or("Could not find home directory")?
             .join(".memo");
         Ok(home_dir)
+    }
+
+    pub fn flush_ttl_values(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let now = chrono::Utc::now().timestamp();
+        self.store.retain(|_, v| {
+            if let Some(ttl) = v.ttl.as_ref() {
+                if let Ok(ttl) = ttl.parse::<i64>() {
+                    return ttl >= now;
+                }
+            }
+            true
+        });
+        self.write_to_file()?;
+        Ok(())
     }
 }
