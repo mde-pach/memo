@@ -67,7 +67,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         Some(("install-completion", _)) => match Memo::install_completion() {
             Ok(_) => {
-                println!("Completion script copier to ~/.memo");
+                println!("Completion script copied to ~/.memo");
                 println!("Please add the following line to your .zshrc or .bashrc file:");
                 println!("source ~/.memo/completion.sh");
             }
