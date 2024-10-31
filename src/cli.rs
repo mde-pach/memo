@@ -31,13 +31,28 @@ pub fn cli() -> Command {
         .about("Remove a memo")
         .arg(arg!(<KEY> "The key of the item to remove."));
 
-    let list = Command::new(MemoCommand::LIST).about("List all memos");
+    let list = Command::new(MemoCommand::LIST)
+        .about("List all memos")
+        .arg(arg!(-p --pretty  "Pretty print the output."));
 
     let set: Command = Command::new(MemoCommand::SET)
         .about("Set a memo")
         .arg(arg!(<KEY> "Item key to set."))
         .arg(arg!([VALUE] "Item value to set."))
         .arg(&ttl_arg);
+
+    let copy = Command::new(MemoCommand::COPY)
+        .about("Copy a memo to the clipboard. Shortcut for get -c")
+        .arg(arg!(<KEY> "The key of the item to copy."));
+
+    let complete = Command::new("_complete")
+        .about("Used for shell completion")
+        .arg(arg!([KEY] "The key of the item complete"))
+        .hide(true);
+
+    let install_completion = Command::new("install-completion")
+        .about("Install shell completion")
+        .hide(true);
 
     Command::new("memo")
         .subcommand_required(false)
@@ -47,4 +62,7 @@ pub fn cli() -> Command {
         .subcommand(rm)
         .subcommand(list)
         .subcommand(set)
+        .subcommand(copy)
+        .subcommand(complete)
+        .subcommand(install_completion)
 }
