@@ -33,7 +33,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             let key: &String = sub_matches.get_one(MemoArg::KEY).expect("KEY is required");
             command.rm(key)?;
         }
-        Some((MemoCommand::LIST, _)) => command.list(),
+        Some((MemoCommand::LIST, sub_matches)) => {
+            let pretty = sub_matches.get_flag("pretty");
+            command.list(pretty);
+        }
         Some((MemoCommand::SET, sub_matches)) => {
             let key: &String = sub_matches.get_one(MemoArg::KEY).unwrap();
 
@@ -43,6 +46,35 @@ fn main() -> Result<(), Box<dyn Error>> {
             let value: Option<&String> = sub_matches.get_one(MemoArg::VALUE);
             command.set(key, value.map(|v| v.as_str()), ttl);
         }
+        Some((MemoCommand::COPY, sub_matches)) => {
+            let key: &String = sub_matches.get_one(MemoArg::KEY).expect("KEY is required");
+            command.copy(key)?;
+        }
+        Some(("_complete", sub_matches)) => {
+            let default = "".to_string();
+            let word: &String = sub_matches.get_one(MemoArg::KEY).unwrap_or(&default);
+            let mut suggestions = Vec::new();
+
+            for key in command.memo.store.keys() {
+                if key.starts_with(word) {
+                    suggestions.push(key.to_string());
+                }
+            }
+            for suggestion in suggestions {
+                println!("{}", suggestion);
+            }
+        }
+
+        Some(("install-completion", _)) => match Memo::install_completion() {
+            Ok(_) => {
+                println!("Completion script copier to ~/.memo");
+                println!("Please add the following line to your .zshrc or .bashrc file:");
+                println!("source ~/.memo/completion.sh");
+            }
+            Err(e) => {
+                eprintln!("Error installing completion: {}", e);
+            }
+        },
 
         _ => {
             println!("No subcommand found");

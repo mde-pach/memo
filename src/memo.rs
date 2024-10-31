@@ -2,7 +2,7 @@ use home::home_dir;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs::{self, File};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct MemoVariable {
@@ -76,6 +76,14 @@ impl Memo {
     pub fn get_default() -> Result<Self, Box<dyn std::error::Error>> {
         let file_path = Self::ensure_directory_and_file(Self::get_memo_dir()?, "default.json")?;
         Ok(Memo::from_file_path(file_path)?)
+    }
+
+    pub fn install_completion() -> Result<(), Box<dyn std::error::Error>> {
+        let memo_dir = Self::get_memo_dir()?;
+        let script_path = Path::new("src/scripts/completion.sh");
+
+        fs::copy(script_path, memo_dir.join("completion.sh"))?;
+        Ok(())
     }
 
     fn write_to_file(&self) -> Result<(), Box<dyn std::error::Error>> {

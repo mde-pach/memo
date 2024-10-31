@@ -1,14 +1,18 @@
 use crate::memo::Memo;
 use arboard::Clipboard;
 use std::error::Error;
+extern crate prettytable;
+use prettytable::{format, row, Table};
+
 pub struct MemoCommand;
 
 impl MemoCommand {
     pub const ADD: &'static str = "add";
     pub const GET: &'static str = "get";
     pub const RM: &'static str = "rm";
-    pub const LIST: &'static str = "list";
+    pub const LIST: &'static str = "ls";
     pub const SET: &'static str = "set";
+    pub const COPY: &'static str = "cp";
 }
 pub struct MemoCommandHandler<'a> {
     pub memo: &'a mut Memo,
@@ -25,7 +29,7 @@ impl MemoCommandHandler<'_> {
                     println!("Added key: {}", key);
                 }
                 Err(e) => {
-                    println!("Error adding key: {}", e);
+                    eprintln!("Error adding key: {}", e);
                 }
             },
         }
@@ -43,13 +47,27 @@ impl MemoCommandHandler<'_> {
                     }
                 }
                 Err(e) => {
-                    println!("Error setting key: {}", e);
+                    eprintln!("Error setting key: {}", e);
                 }
             },
             None => {
-                println!("No value found for key: {}", key);
+                eprintln!("No value found for key: {}", key);
             }
         }
+    }
+
+    pub fn copy(&self, key: &str) -> Result<(), Box<dyn Error>> {
+        match self.memo.get(key) {
+            Some(v) => {
+                let value = &v.value;
+                let mut clipboard = Clipboard::new()?;
+                clipboard.set_text(value)?;
+            }
+            None => {
+                eprintln!("No value found for key: {}", key);
+            }
+        }
+        Ok(())
     }
 
     pub fn get(&self, key: &str, to_clipboard: bool) -> Result<(), Box<dyn Error>> {
@@ -63,7 +81,7 @@ impl MemoCommandHandler<'_> {
                 println!("{}", value);
             }
             None => {
-                println!("No value found for key: {}", key);
+                eprintln!("No value found for key: {}", key);
             }
         }
         Ok(())
@@ -75,15 +93,26 @@ impl MemoCommandHandler<'_> {
                 println!("Removing key: {}", key);
             }
             None => {
-                println!("No value found for key: {}", key);
+                eprintln!("No value found for key: {}", key);
             }
         }
         Ok(())
     }
 
-    pub fn list(&self) {
-        for (key, value) in &self.memo.store {
-            println!("{} : {}", key, value.value);
+    pub fn list(&self, pretty: bool) {
+        if pretty {
+            let mut table = Table::new();
+            table.set_format(*format::consts::FORMAT_NO_LINESEP_WITH_TITLE);
+
+            for (key, value) in &self.memo.store {
+                table.add_row(row![key, value.value]);
+            }
+
+            table.printstd();
+        } else {
+            for (key, value) in &self.memo.store {
+                println!("{} : {}", key, value.value);
+            }
         }
     }
 }
