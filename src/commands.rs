@@ -36,6 +36,9 @@ impl MemoCommandHandler<'_> {
     }
 
     pub fn set(&mut self, key: &str, value: Option<&str>, ttl: Option<i64>) {
+        let search_key = self.get_search_key(key);
+        let key = search_key.as_str();
+
         match self.memo.get(key) {
             Some(_) => match self.memo.set(key, value, ttl) {
                 Ok(_) => {
@@ -56,7 +59,10 @@ impl MemoCommandHandler<'_> {
         }
     }
 
-    pub fn copy(&self, key: &str) -> Result<(), Box<dyn Error>> {
+    pub fn copy(&mut self, key: &str) -> Result<(), Box<dyn Error>> {
+        let search_key = self.get_search_key(key);
+        let key = search_key.as_str();
+
         match self.memo.get(key) {
             Some(v) => {
                 let value = &v.value;
@@ -70,7 +76,11 @@ impl MemoCommandHandler<'_> {
         Ok(())
     }
 
-    pub fn get(&self, key: &str, to_clipboard: bool) -> Result<(), Box<dyn Error>> {
+    pub fn get(&mut self, key: &str, to_clipboard: bool) -> Result<(), Box<dyn Error>> {
+        let search_key = self.get_search_key(key);
+
+        let key = search_key.as_str();
+
         match self.memo.get(key) {
             Some(v) => {
                 let value = &v.value;
@@ -87,6 +97,9 @@ impl MemoCommandHandler<'_> {
         Ok(())
     }
     pub fn rm(&mut self, key: &str) -> Result<(), Box<dyn Error>> {
+        let search_key = self.get_search_key(key);
+        let key = search_key.as_str();
+
         match self.memo.get(key) {
             Some(_) => {
                 self.memo.rm(key)?;
@@ -114,5 +127,14 @@ impl MemoCommandHandler<'_> {
                 println!("{} : {}", key, value.value);
             }
         }
+    }
+
+    fn get_search_key(&self, key: &str) -> String {
+        if key == "-" && self.memo.meta.last_key_used.is_some() {
+            if let Some(last_key) = &self.memo.meta.last_key_used {
+                return last_key.to_string();
+            }
+        }
+        key.to_string()
     }
 }

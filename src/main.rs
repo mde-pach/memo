@@ -8,10 +8,10 @@ use memo::Memo;
 use std::error::Error;
 fn main() -> Result<(), Box<dyn Error>> {
     let mut memo = Memo::get_default().expect("Could not load memo file");
+
     memo.flush_ttl_values()?;
 
     let mut command = MemoCommandHandler { memo: &mut memo };
-
     match cli().get_matches().subcommand() {
         Some((MemoCommand::ADD, sub_matches)) => {
             let key: &String = sub_matches.get_one(MemoArg::KEY).unwrap();

@@ -11,14 +11,28 @@ pub struct MemoVariable {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+pub struct MemoMeta {
+    pub last_key_used: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Memo {
     pub store: HashMap<String, MemoVariable>,
+    pub meta: MemoMeta,
+    #[serde(skip)]
     file_path: PathBuf,
 }
 
 impl Memo {
-    pub fn get(&self, key: &str) -> Option<&MemoVariable> {
-        self.store.get(key)
+    pub fn get(&mut self, key: &str) -> Option<&MemoVariable> {
+        match self.store.get(key) {
+            Some(v) => {
+                self.meta.last_key_used = Some(key.to_string());
+                self.write_to_file().expect("Could not write to file");
+                Some(v)
+            }
+            None => None,
+        }
     }
 
     pub fn add(
@@ -35,7 +49,8 @@ impl Memo {
                 ttl,
             },
         );
-        serde_json::to_writer_pretty(&File::create(&self.file_path)?, &self.store)?;
+        self.meta.last_key_used = Some(key.to_string());
+        self.write_to_file()?;
         Ok(())
     }
 
@@ -54,6 +69,7 @@ impl Memo {
                 v.ttl = Some(ttl);
             }
         }
+        self.meta.last_key_used = Some(key.to_string());
         self.write_to_file()?;
         Ok(())
     }
@@ -63,19 +79,20 @@ impl Memo {
         Ok(())
     }
 
-    pub fn from_file_path(file_path: PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
-        let file = File::open(&file_path)?;
-
-        let memo = Self {
-            store: serde_json::from_reader(file)?,
-            file_path,
-        };
-        Ok(memo)
+    fn from_file_path(file_path: &PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
+        let file = File::open(file_path)?;
+        Ok(serde_json::from_reader(file)?)
     }
 
     pub fn get_default() -> Result<Self, Box<dyn std::error::Error>> {
         let file_path = Self::ensure_directory_and_file(Self::get_memo_dir()?, "default.json")?;
-        Ok(Memo::from_file_path(file_path)?)
+        let memo = Self::from_file_path(&file_path)?;
+
+        Ok(Self {
+            store: memo.store,
+            meta: memo.meta,
+            file_path,
+        })
     }
 
     pub fn install_completion() -> Result<(), Box<dyn std::error::Error>> {
@@ -87,7 +104,7 @@ impl Memo {
     }
 
     fn write_to_file(&self) -> Result<(), Box<dyn std::error::Error>> {
-        serde_json::to_writer_pretty(&File::create(&self.file_path)?, &self.store)?;
+        serde_json::to_writer_pretty(&File::create(&self.file_path)?, &self)?;
         Ok(())
     }
     fn ensure_directory_and_file(
