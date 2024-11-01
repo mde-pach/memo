@@ -12,6 +12,7 @@ To install Memo CLI, clone the repository and install using install script:
 
 ```sh
 git clone https://github.com/pbrochar/memo.git
+cd memo
 ./install.sh
 ```
 
