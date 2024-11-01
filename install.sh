@@ -3,8 +3,8 @@
 # Exit on errors
 set -e
 
-# Project name (change this if your binary name is different)
 PROJECT_NAME="memo"
+INSTALL_PATH="/tmp/memo"
 
 # Function to check if a command exists
 command_exists() {
@@ -18,19 +18,26 @@ if ! command_exists cargo; then
     exit 1
 fi
 
+# Clone the repository
+echo "Downloading the project"
+git clone https://github.com/pbrochar/memo.git $INSTALL_PATH
+cd $INSTALL_PATH
+
 # Build the project in release mode
 echo "Building the project in release mode..."
 cargo build --release
 
+cd -
+
 # Check if the binary was created successfully
-if [[ ! -f "target/release/$PROJECT_NAME" ]]; then
+if [[ ! -f "$INSTALL_PATH/target/release/$PROJECT_NAME" ]]; then
     echo "Error: Build failed or binary not found!"
     exit 1
 fi
 
 # Copy the binary to /usr/local/bin (requires sudo)
 echo "Installing the binary to /usr/local/bin..."
-sudo cp "target/release/$PROJECT_NAME" /usr/local/bin/
+sudo cp "$INSTALL_PATH/target/release/$PROJECT_NAME" /usr/local/bin/
 
 # Set executable permissions (just in case)
 sudo chmod +x /usr/local/bin/$PROJECT_NAME
