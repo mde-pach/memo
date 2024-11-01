@@ -118,7 +118,8 @@ impl Memo {
         let file_path = directory_path.join(filename);
 
         if !file_path.exists() {
-            File::create(&file_path)?;
+            let default_file = Path::new("src/default.json");
+            fs::copy(default_file, &file_path)?;
         }
 
         Ok(file_path)
