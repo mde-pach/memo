@@ -27,8 +27,6 @@ cd $INSTALL_PATH
 echo "Building the project in release mode..."
 cargo build --release
 
-cd -
-
 # Check if the binary was created successfully
 if [[ ! -f "$INSTALL_PATH/target/release/$PROJECT_NAME" ]]; then
     echo "Error: Build failed or binary not found!"
@@ -46,5 +44,9 @@ sudo chmod +x /usr/local/bin/$PROJECT_NAME
 echo "Cleaning up build artifacts..."
 cargo clean
 
+cd -
+
 echo "$PROJECT_NAME has been successfully installed!"
 echo "You can now run the project with the command: $PROJECT_NAME"
+
+memo install-completion
