@@ -8,12 +8,11 @@ Memo CLI requires Rust to be installed on your system.
 
 ## Installation
 
-To install Memo CLI, clone the repository and build the project using Cargo:
+To install Memo CLI, clone the repository and install using install script:
 
 ```sh
 git clone https://github.com/pbrochar/memo.git
-cd memo
-cargo build --release
+./install.sh
 ```
 
 ## Usage
